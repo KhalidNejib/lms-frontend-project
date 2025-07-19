@@ -1,59 +1,68 @@
+
 import React, { useState } from 'react';
+import Loader from '../ui/Loader';
+import ErrorMessage from '../ui/ErrorMessage';
+import axios from 'axios'
 
-interface LoginFormProps {
+type Props = {
   onSubmit: (email: string, password: string) => void;
-}
+};
 
-const LoginForm: React.FC<LoginFormProps> = ({ onSubmit }) => {
+const LoginForm: React.FC<Props> = ({ onSubmit }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState('');
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    onSubmit(email, password);
+    setIsLoading(true);
+    setError('');
+
+    try {
+      
+      await axios.post('/api/login', { email, password });
+      onSubmit(email, password);
+    } catch (err: any) {
+      setError('Login failed. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
-    <form onSubmit={handleSubmit} className="needs-validation" noValidate>
+    <form onSubmit={handleSubmit}>
       <div className="mb-3">
-        <label htmlFor="email" className="form-label">Email address</label>
+        <label className="form-label">Email</label>
         <input
           type="email"
           className="form-control"
-          id="email"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           required
         />
-        <div className="invalid-feedback">
-          Please enter a valid email address.
-        </div>
       </div>
       <div className="mb-3">
-        <label htmlFor="password" className="form-label">Password</label>
+        <label className="form-label">Password</label>
         <input
           type="password"
           className="form-control"
-          id="password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           required
         />
-        <div className="invalid-feedback">
-          Please enter your password.
-        </div>
       </div>
-      <div className="mb-3 form-check">
-        <input type="checkbox" className="form-check-input" id="rememberMe" />
-        <label className="form-check-label" htmlFor="rememberMe">
-          Remember me
-        </label>
+
+      {isLoading && <Loader />}
+      {error && <ErrorMessage message={error} />}
+
+      <div className="d-grid mt-3">
+        <button type="submit" className="btn btn-primary" disabled={isLoading}>
+          {isLoading ? 'Signing in...' : 'Sign In'}
+        </button>
       </div>
-      <button type="submit" className="btn btn-primary w-100">
-        Sign In
-      </button>
     </form>
   );
 };
 
-export default LoginForm; 
+export default LoginForm;

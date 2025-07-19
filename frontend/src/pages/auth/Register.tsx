@@ -1,6 +1,12 @@
 import React, { useState } from 'react';
+import Loader from '../../components/ui/Loader';
+import ErrorMessage from '../../components/ui/ErrorMessage';
+import axios from 'axios';
 
 const Register: React.FC = () => {
+  const [isLoading, setIsLoading] = useState(false);
+const [error, setError] = useState('');
+
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -8,11 +14,30 @@ const Register: React.FC = () => {
     confirmPassword: '',
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Handle registration logic here
-    console.log('Register attempt:', formData);
+    setIsLoading(true);
+    setError('');
+  
+    const { name, email, password, confirmPassword } = formData;
+  
+    if (password !== confirmPassword) {
+      setError("Passwords do not match.");
+      setIsLoading(false);
+      return;
+    }
+  
+    try {
+      axios.post('/api/register', formData)
+      
+      console.log('Register attempt:', formData);
+    } catch (err: any) {
+      setError('Registration failed. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
   };
+  
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({
@@ -98,9 +123,13 @@ const Register: React.FC = () => {
                     I agree to the <a href="#" className="text-decoration-none">Terms of Service</a>
                   </label>
                 </div>
-                <button type="submit" className="btn btn-primary w-100">
-                  Create Account
+                {isLoading && <Loader />}
+                   {error && <ErrorMessage message={error} />}
+
+                <button type="submit" className="btn btn-primary w-100" disabled={isLoading}>
+                {isLoading ? "Creating Account..." : "Create Account"}
                 </button>
+
               </form>
               <div className="text-center mt-3">
                 <p className="mb-0">

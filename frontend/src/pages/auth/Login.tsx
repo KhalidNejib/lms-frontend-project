@@ -1,6 +1,5 @@
 import React from 'react';
 import LoginForm from '../../components/forms/LoginForm';
-
 const Login: React.FC = () => {
   const handleLogin = (email: string, password: string) => {
     // Handle login logic here
