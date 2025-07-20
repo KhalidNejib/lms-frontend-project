@@ -1,99 +1,229 @@
-import React from 'react';
-import Layout from '../../components/common/Layout';
+import React, { useEffect, useState } from 'react'
+import { useParams, useNavigate } from 'react-router-dom'
+import { useDispatch, useSelector } from 'react-redux'
+import {
+  Box,
+  Typography,
+  Card,
+  CardContent,
+  CardMedia,
+  Button,
+  Chip,
+  Avatar,
+  Grid,
+  List,
+  ListItem,
+  ListItemAvatar,
+  ListItemText,
+  Divider,
+  Rating,
+  Paper,
+  CircularProgress,
+  Alert,
+} from '@mui/material'
+import { School, Person, PlayArrow, AccessTime } from '@mui/icons-material'
+import { RootState } from '../../store'
+import { fetchCourse } from '../../store/courseSlice'
+import courseService from '../../services/course.service'
+
+interface Module {
+  id: string;
+  title: string;
+  description: string;
+  order: number;
+  duration: number;
+  isCompleted: boolean;
+}
+
+interface Review {
+  id: string;
+  userId: string;
+  userName: string;
+  rating: number;
+  review: string;
+  createdAt: string;
+}
 
 const CourseDetail: React.FC = () => {
-  const course = {
-    id: 1,
-    title: 'React Fundamentals',
-    description: 'Learn the basics of React including components, state, and props.',
-    instructor: 'John Doe',
-    category: 'Programming',
-    duration: '8 weeks',
-    students: 45,
-    modules: [
-      { id: 1, title: 'Introduction to React', duration: '2 hours', completed: true },
-      { id: 2, title: 'Components and Props', duration: '3 hours', completed: true },
-      { id: 3, title: 'State and Lifecycle', duration: '4 hours', completed: false },
-      { id: 4, title: 'Hooks', duration: '5 hours', completed: false },
-      { id: 5, title: 'Advanced Patterns', duration: '6 hours', completed: false },
-    ],
-  };
+  const { id } = useParams<{ id: string }>()
+  const dispatch = useDispatch()
+  const navigate = useNavigate()
+  const { currentCourse, isLoading, error } = useSelector((state: RootState) => state.course)
+
+  const [modules, setModules] = useState<Module[]>([])
+  const [reviews, setReviews] = useState<Review[]>([])
+  const [loadingModules, setLoadingModules] = useState(false)
+  const [loadingReviews, setLoadingReviews] = useState(false)
+  const [modulesError, setModulesError] = useState<string | null>(null)
+  const [reviewsError, setReviewsError] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (id) dispatch(fetchCourse(id))
+  }, [dispatch, id])
+
+  useEffect(() => {
+    const fetchModules = async () => {
+      if (!id) return
+      setLoadingModules(true)
+      setModulesError(null)
+      try {
+        const res = await fetch(`/api/courses/${id}/modules`)
+        if (!res.ok) throw new Error('Failed to fetch modules')
+        const data = await res.json()
+        setModules(data)
+      } catch (err) {
+        setModulesError(err instanceof Error ? err.message : 'Failed to fetch modules')
+      } finally {
+        setLoadingModules(false)
+      }
+    }
+    fetchModules()
+  }, [id])
+
+  useEffect(() => {
+    const fetchReviews = async () => {
+      if (!id) return
+      setLoadingReviews(true)
+      setReviewsError(null)
+      try {
+        const data = await courseService.getCourseReviews(id)
+        setReviews(data)
+      } catch (err) {
+        setReviewsError(err instanceof Error ? err.message : 'Failed to fetch reviews')
+      } finally {
+        setLoadingReviews(false)
+      }
+    }
+    fetchReviews()
+  }, [id])
+
+  if (isLoading || !currentCourse) {
+    return <Box sx={{ display: 'flex', justifyContent: 'center', mt: 8 }}><CircularProgress /></Box>
+  }
+
+  if (error) {
+    return <Alert severity="error">{error}</Alert>
+  }
 
   return (
-    <Layout>
-      <div className="p-6">
-        <div className="mb-6">
-          <h1 className="text-3xl font-bold mb-2">{course.title}</h1>
-          <p className="text-gray-600 mb-4">{course.description}</p>
-          <div className="flex space-x-6 text-sm text-gray-500">
-            <span>Instructor: {course.instructor}</span>
-            <span>Category: {course.category}</span>
-            <span>Duration: {course.duration}</span>
-            <span>Students: {course.students}</span>
-          </div>
-        </div>
+    <Box sx={{ flexGrow: 1 }}>
+      <Grid container spacing={4}>
+        {/* Course Image & Info */}
+        <Grid item xs={12} md={4}>
+          <Card>
+            <CardMedia
+              component="img"
+              height="220"
+              image={currentCourse.image || 'https://via.placeholder.com/400x220?text=Course+Image'}
+              alt={currentCourse.title}
+            />
+            <CardContent>
+              <Typography variant="h5" gutterBottom>{currentCourse.title}</Typography>
+              <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>{currentCourse.description}</Typography>
+              <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                <Person fontSize="small" sx={{ mr: 1 }} />
+                <Typography variant="body2">{currentCourse.instructor}</Typography>
+              </Box>
+              <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                <AccessTime fontSize="small" sx={{ mr: 1 }} />
+                <Typography variant="body2">{currentCourse.duration}</Typography>
+              </Box>
+              <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                <Rating value={currentCourse.rating} readOnly size="small" />
+                <Typography variant="caption" sx={{ ml: 1 }}>({currentCourse.rating})</Typography>
+              </Box>
+              <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                <Chip label={currentCourse.category} size="small" sx={{ mr: 1 }} />
+                <Chip label={currentCourse.status} size="small" color={currentCourse.status === 'published' ? 'success' : 'default'} />
+              </Box>
+              <Typography variant="h6" color="primary" sx={{ mb: 2 }}>
+                {currentCourse.price === 0 ? 'Free' : `$${currentCourse.price}`}
+              </Typography>
+              <Button
+                fullWidth
+                variant="contained"
+                startIcon={<PlayArrow />}
+                onClick={() => navigate(`/courses/${currentCourse.id}/play`)}
+                sx={{ mb: 1 }}
+              >
+                {currentCourse.price === 0 ? 'Start Learning' : 'Enroll & Start'}
+              </Button>
+            </CardContent>
+          </Card>
+        </Grid>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="lg:col-span-2">
-            <div className="bg-white p-6 rounded-lg shadow">
-              <h2 className="text-xl font-semibold mb-4">Course Modules</h2>
-              <div className="space-y-3">
-                {course.modules.map((module) => (
-                  <div
-                    key={module.id}
-                    className={`p-4 border rounded-lg ${
-                      module.completed ? 'bg-green-50 border-green-200' : 'bg-gray-50 border-gray-200'
-                    }`}
-                  >
-                    <div className="flex justify-between items-center">
-                      <div>
-                        <h3 className="font-medium">{module.title}</h3>
-                        <p className="text-sm text-gray-500">{module.duration}</p>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        {module.completed && (
-                          <span className="text-green-600 text-sm">✓ Completed</span>
-                        )}
-                        <button className="bg-blue-600 text-white px-3 py-1 rounded text-sm hover:bg-blue-700">
-                          {module.completed ? 'Review' : 'Start'}
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
+        {/* Course Modules & Reviews */}
+        <Grid item xs={12} md={8}>
+          <Paper sx={{ p: 3, mb: 4 }}>
+            <Typography variant="h6" gutterBottom>Course Modules</Typography>
+            {loadingModules ? (
+              <CircularProgress size={24} />
+            ) : modulesError ? (
+              <Alert severity="error">{modulesError}</Alert>
+            ) : (
+              <List>
+                {modules.length === 0 ? (
+                  <Typography variant="body2" color="text.secondary">No modules found.</Typography>
+                ) : (
+                  modules.map((mod) => (
+                    <React.Fragment key={mod.id}>
+                      <ListItem>
+                        <ListItemAvatar>
+                          <Avatar><School /></Avatar>
+                        </ListItemAvatar>
+                        <ListItemText
+                          primary={mod.title}
+                          secondary={mod.description}
+                        />
+                      </ListItem>
+                      <Divider variant="inset" component="li" />
+                    </React.Fragment>
+                  ))
+                )}
+              </List>
+            )}
+          </Paper>
 
-          <div>
-            <div className="bg-white p-6 rounded-lg shadow">
-              <h3 className="text-lg font-semibold mb-4">Course Progress</h3>
-              <div className="mb-4">
-                <div className="flex justify-between mb-1">
-                  <span>Overall Progress</span>
-                  <span>40%</span>
-                </div>
-                <div className="w-full bg-gray-200 rounded-full h-2">
-                  <div className="bg-blue-600 h-2 rounded-full" style={{ width: '40%' }}></div>
-                </div>
-              </div>
-              <div className="space-y-3">
-                <button className="w-full bg-blue-600 text-white py-2 px-4 rounded hover:bg-blue-700">
-                  Continue Learning
-                </button>
-                <button className="w-full bg-green-600 text-white py-2 px-4 rounded hover:bg-green-700">
-                  Take Quiz
-                </button>
-                <button className="w-full bg-purple-600 text-white py-2 px-4 rounded hover:bg-purple-700">
-                  Download Certificate
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </Layout>
-  );
-};
+          <Paper sx={{ p: 3 }}>
+            <Typography variant="h6" gutterBottom>Student Reviews</Typography>
+            {loadingReviews ? (
+              <CircularProgress size={24} />
+            ) : reviewsError ? (
+              <Alert severity="error">{reviewsError}</Alert>
+            ) : (
+              <List>
+                {reviews.length === 0 ? (
+                  <Typography variant="body2" color="text.secondary">No reviews yet.</Typography>
+                ) : (
+                  reviews.map((rev) => (
+                    <React.Fragment key={rev.id}>
+                      <ListItem alignItems="flex-start">
+                        <ListItemAvatar>
+                          <Avatar>{rev.userName.charAt(0)}</Avatar>
+                        </ListItemAvatar>
+                        <ListItemText
+                          primary={<Rating value={rev.rating} readOnly size="small" />}
+                          secondary={
+                            <>
+                              <Typography component="span" variant="body2" color="text.primary">
+                                {rev.userName}
+                              </Typography>
+                              {` — ${rev.review}`}
+                            </>
+                          }
+                        />
+                      </ListItem>
+                      <Divider variant="inset" component="li" />
+                    </React.Fragment>
+                  ))
+                )}
+              </List>
+            )}
+          </Paper>
+        </Grid>
+      </Grid>
+    </Box>
+  )
+}
 
-export default CourseDetail; 
+export default CourseDetail 

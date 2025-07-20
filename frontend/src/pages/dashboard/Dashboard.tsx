@@ -1,141 +1,248 @@
-import React from 'react';
-import Layout from '../../components/common/Layout';
+import React, { useEffect } from 'react'
+import { useDispatch, useSelector } from 'react-redux'
+import {
+  Box,
+  Grid,
+  Card,
+  CardContent,
+  Typography,
+  LinearProgress,
+  Avatar,
+  List,
+  ListItem,
+  ListItemText,
+  ListItemAvatar,
+  Chip,
+  Button,
+} from '@mui/material'
+import {
+  School,
+  Book,
+  Assessment,
+  TrendingUp,
+  Person,
+  Schedule,
+} from '@mui/icons-material'
+import {
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  PieChart,
+  Pie,
+  Cell,
+} from 'recharts'
+import { RootState } from '../../store'
+import { fetchCourses } from '../../store/courseSlice'
 
 const Dashboard: React.FC = () => {
+  const dispatch = useDispatch()
+  const { user } = useSelector((state: RootState) => state.auth)
+  const { courses, isLoading } = useSelector((state: RootState) => state.course)
+
+  useEffect(() => {
+    dispatch(fetchCourses())
+  }, [dispatch])
+
+  // Mock data for charts
+  const progressData = [
+    { name: 'Week 1', progress: 65 },
+    { name: 'Week 2', progress: 78 },
+    { name: 'Week 3', progress: 82 },
+    { name: 'Week 4', progress: 90 },
+    { name: 'Week 5', progress: 85 },
+    { name: 'Week 6', progress: 92 },
+  ]
+
+  const categoryData = [
+    { name: 'Programming', value: 35, color: '#8884d8' },
+    { name: 'Design', value: 25, color: '#82ca9d' },
+    { name: 'Business', value: 20, color: '#ffc658' },
+    { name: 'Marketing', value: 20, color: '#ff7300' },
+  ]
+
+  const recentCourses = courses.slice(0, 5)
+  const enrolledCourses = courses.filter(course => course.status === 'published').slice(0, 3)
+
+  const stats = [
+    {
+      title: 'Enrolled Courses',
+      value: enrolledCourses.length,
+      icon: <School color="primary" />,
+      color: '#1976d2',
+    },
+    {
+      title: 'Completed Modules',
+      value: 24,
+      icon: <Book color="success" />,
+      color: '#2e7d32',
+    },
+    {
+      title: 'Assessments',
+      value: 8,
+      icon: <Assessment color="warning" />,
+      color: '#ed6c02',
+    },
+    {
+      title: 'Average Score',
+      value: '85%',
+      icon: <TrendingUp color="info" />,
+      color: '#0288d1',
+    },
+  ]
+
   return (
-    <Layout>
-      <div className="container-fluid py-4">
-        <h1 className="h2 mb-4">Dashboard</h1>
-        <div className="row">
-          <div className="col-xl-3 col-md-6 mb-4">
-            <div className="card border-left-primary shadow h-100 py-2">
-              <div className="card-body">
-                <div className="row no-gutters align-items-center">
-                  <div className="col mr-2">
-                    <div className="text-xs font-weight-bold text-primary text-uppercase mb-1">
-                      Total Courses
-                    </div>
-                    <div className="h5 mb-0 font-weight-bold text-gray-800">12</div>
-                  </div>
-                  <div className="col-auto">
-                    <i className="bi bi-book fa-2x text-gray-300"></i>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
+    <Box sx={{ flexGrow: 1 }}>
+      <Typography variant="h4" gutterBottom>
+        Welcome back, {user?.name}!
+      </Typography>
+      <Typography variant="body1" color="text.secondary" sx={{ mb: 4 }}>
+        Here's what's happening with your learning journey
+      </Typography>
 
-          <div className="col-xl-3 col-md-6 mb-4">
-            <div className="card border-left-success shadow h-100 py-2">
-              <div className="card-body">
-                <div className="row no-gutters align-items-center">
-                  <div className="col mr-2">
-                    <div className="text-xs font-weight-bold text-success text-uppercase mb-1">
-                      Enrolled Students
-                    </div>
-                    <div className="h5 mb-0 font-weight-bold text-gray-800">156</div>
-                  </div>
-                  <div className="col-auto">
-                    <i className="bi bi-people fa-2x text-gray-300"></i>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
+      {/* Statistics Cards */}
+      <Grid container spacing={3} sx={{ mb: 4 }}>
+        {stats.map((stat, index) => (
+          <Grid item xs={12} sm={6} md={3} key={index}>
+            <Card>
+              <CardContent>
+                <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                  <Avatar sx={{ bgcolor: stat.color, mr: 2 }}>
+                    {stat.icon}
+                  </Avatar>
+                  <Box>
+                    <Typography variant="h4" component="div">
+                      {stat.value}
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      {stat.title}
+                    </Typography>
+                  </Box>
+                </Box>
+              </CardContent>
+            </Card>
+          </Grid>
+        ))}
+      </Grid>
 
-          <div className="col-xl-3 col-md-6 mb-4">
-            <div className="card border-left-warning shadow h-100 py-2">
-              <div className="card-body">
-                <div className="row no-gutters align-items-center">
-                  <div className="col mr-2">
-                    <div className="text-xs font-weight-bold text-warning text-uppercase mb-1">
-                      Active Sessions
-                    </div>
-                    <div className="h5 mb-0 font-weight-bold text-gray-800">8</div>
-                  </div>
-                  <div className="col-auto">
-                    <i className="bi bi-activity fa-2x text-gray-300"></i>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
+      <Grid container spacing={3}>
+        {/* Progress Chart */}
+        <Grid item xs={12} lg={8}>
+          <Card>
+            <CardContent>
+              <Typography variant="h6" gutterBottom>
+                Learning Progress
+              </Typography>
+              <ResponsiveContainer width="100%" height={300}>
+                <LineChart data={progressData}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="name" />
+                  <YAxis />
+                  <Tooltip />
+                  <Line
+                    type="monotone"
+                    dataKey="progress"
+                    stroke="#1976d2"
+                    strokeWidth={2}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            </CardContent>
+          </Card>
+        </Grid>
 
-          <div className="col-xl-3 col-md-6 mb-4">
-            <div className="card border-left-info shadow h-100 py-2">
-              <div className="card-body">
-                <div className="row no-gutters align-items-center">
-                  <div className="col mr-2">
-                    <div className="text-xs font-weight-bold text-info text-uppercase mb-1">
-                      Completion Rate
-                    </div>
-                    <div className="h5 mb-0 font-weight-bold text-gray-800">87%</div>
-                  </div>
-                  <div className="col-auto">
-                    <i className="bi bi-graph-up fa-2x text-gray-300"></i>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
+        {/* Category Distribution */}
+        <Grid item xs={12} lg={4}>
+          <Card>
+            <CardContent>
+              <Typography variant="h6" gutterBottom>
+                Course Categories
+              </Typography>
+              <ResponsiveContainer width="100%" height={300}>
+                <PieChart>
+                  <Pie
+                    data={categoryData}
+                    cx="50%"
+                    cy="50%"
+                    outerRadius={80}
+                    dataKey="value"
+                    label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                  >
+                    {categoryData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.color} />
+                    ))}
+                  </Pie>
+                  <Tooltip />
+                </PieChart>
+              </ResponsiveContainer>
+            </CardContent>
+          </Card>
+        </Grid>
 
-        <div className="row">
-          <div className="col-lg-6">
-            <div className="card shadow mb-4">
-              <div className="card-header py-3">
-                <h6 className="m-0 font-weight-bold text-primary">Recent Activities</h6>
-              </div>
-              <div className="card-body">
-                <div className="list-group list-group-flush">
-                  <div className="list-group-item d-flex justify-content-between align-items-center">
-                    <div>
-                      <strong>New course enrollment</strong>
-                      <br />
-                      <small className="text-muted">React Fundamentals - 2 hours ago</small>
-                    </div>
-                    <span className="badge bg-primary rounded-pill">New</span>
-                  </div>
-                  <div className="list-group-item d-flex justify-content-between align-items-center">
-                    <div>
-                      <strong>Quiz completed</strong>
-                      <br />
-                      <small className="text-muted">JavaScript Basics - 4 hours ago</small>
-                    </div>
-                    <span className="badge bg-success rounded-pill">Completed</span>
-                  </div>
-                  <div className="list-group-item d-flex justify-content-between align-items-center">
-                    <div>
-                      <strong>Assignment submitted</strong>
-                      <br />
-                      <small className="text-muted">UI/UX Design - 1 day ago</small>
-                    </div>
-                    <span className="badge bg-warning rounded-pill">Pending</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
+        {/* Recent Courses */}
+        <Grid item xs={12} lg={6}>
+          <Card>
+            <CardContent>
+              <Typography variant="h6" gutterBottom>
+                Recent Courses
+              </Typography>
+              <List>
+                {recentCourses.map((course) => (
+                  <ListItem key={course.id} divider>
+                    <ListItemAvatar>
+                      <Avatar>
+                        <School />
+                      </Avatar>
+                    </ListItemAvatar>
+                    <ListItemText
+                      primary={course.title}
+                      secondary={`${course.instructor} • ${course.duration}`}
+                    />
+                    <Chip
+                      label={course.status}
+                      color={course.status === 'published' ? 'success' : 'default'}
+                      size="small"
+                    />
+                  </ListItem>
+                ))}
+              </List>
+            </CardContent>
+          </Card>
+        </Grid>
 
-          <div className="col-lg-6">
-            <div className="card shadow mb-4">
-              <div className="card-header py-3">
-                <h6 className="m-0 font-weight-bold text-primary">Quick Actions</h6>
-              </div>
-              <div className="card-body">
-                <div className="d-grid gap-2">
-                  <button className="btn btn-primary">Create New Course</button>
-                  <button className="btn btn-success">View Analytics</button>
-                  <button className="btn btn-info">Manage Users</button>
-                  <button className="btn btn-warning">Review Submissions</button>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </Layout>
-  );
-};
+        {/* Current Progress */}
+        <Grid item xs={12} lg={6}>
+          <Card>
+            <CardContent>
+              <Typography variant="h6" gutterBottom>
+                Current Progress
+              </Typography>
+              {enrolledCourses.map((course) => (
+                <Box key={course.id} sx={{ mb: 3 }}>
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
+                    <Typography variant="body2">{course.title}</Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      75%
+                    </Typography>
+                  </Box>
+                  <LinearProgress variant="determinate" value={75} sx={{ mb: 1 }} />
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <Schedule fontSize="small" color="action" />
+                    <Typography variant="caption" color="text.secondary">
+                      3 modules remaining
+                    </Typography>
+                  </Box>
+                </Box>
+              ))}
+            </CardContent>
+          </Card>
+        </Grid>
+      </Grid>
+    </Box>
+  )
+}
 
-export default Dashboard; 
+export default Dashboard 

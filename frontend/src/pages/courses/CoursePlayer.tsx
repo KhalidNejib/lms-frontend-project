@@ -1,107 +1,135 @@
-import React from 'react';
-import Layout from '../../components/common/Layout';
+import React from 'react'
+import { useParams, useNavigate } from 'react-router-dom'
+import {
+  Box,
+  Typography,
+  Card,
+  CardContent,
+  Button,
+  List,
+  ListItem,
+  ListItemText,
+  ListItemIcon,
+  Divider,
+  LinearProgress,
+  Paper,
+  Chip,
+  Avatar,
+  Grid,
+} from '@mui/material'
+import { PlayCircle, Description, Quiz, ArrowBack, ArrowForward, CheckCircle } from '@mui/icons-material'
+
+const mockModules = [
+  { id: '1', title: 'Introduction', type: 'video', completed: true },
+  { id: '2', title: 'React Basics', type: 'text', completed: true },
+  { id: '3', title: 'Hooks Deep Dive', type: 'video', completed: false },
+  { id: '4', title: 'Final Quiz', type: 'quiz', completed: false },
+]
 
 const CoursePlayer: React.FC = () => {
-  const currentModule = {
-    id: 3,
-    title: 'State and Lifecycle',
-    content: 'This module covers React state management and component lifecycle methods.',
-    videoUrl: 'https://example.com/video.mp4',
-    duration: '45 minutes',
-    progress: 60,
-  };
+  const { id } = useParams<{ id: string }>()
+  const navigate = useNavigate()
+  const [currentModule, setCurrentModule] = React.useState(0)
+
+  const handlePrev = () => {
+    setCurrentModule((prev) => Math.max(prev - 1, 0))
+  }
+  const handleNext = () => {
+    setCurrentModule((prev) => Math.min(prev + 1, mockModules.length - 1))
+  }
+
+  const module = mockModules[currentModule]
+  const progress = ((currentModule + 1) / mockModules.length) * 100
 
   return (
-    <Layout>
-      <div className="container-fluid py-4">
-        <div className="row">
-          <div className="col-lg-8">
-            <div className="card shadow mb-4">
-              <div className="card-header">
-                <h5 className="card-title mb-0">{currentModule.title}</h5>
-              </div>
-              <div className="card-body">
-                <div className="ratio ratio-16x9 mb-3">
-                  <video
-                    className="embed-responsive-item"
-                    controls
-                    poster="https://via.placeholder.com/800x450"
+    <Box sx={{ flexGrow: 1 }}>
+      <Grid container spacing={4}>
+        {/* Module Navigation */}
+        <Grid item xs={12} md={3}>
+          <Paper sx={{ p: 2, mb: 2 }}>
+            <Typography variant="h6" gutterBottom>Modules</Typography>
+            <List>
+              {mockModules.map((mod, idx) => (
+                <React.Fragment key={mod.id}>
+                  <ListItem
+                    button
+                    selected={idx === currentModule}
+                    onClick={() => setCurrentModule(idx)}
                   >
-                    <source src={currentModule.videoUrl} type="video/mp4" />
-                    Your browser does not support the video tag.
-                  </video>
-                </div>
-                <div className="progress mb-3">
-                  <div 
-                    className="progress-bar" 
-                    role="progressbar" 
-                    style={{ width: `${currentModule.progress}%` }}
-                    aria-valuenow={currentModule.progress} 
-                    aria-valuemin={0} 
-                    aria-valuemax={100}
-                  >
-                    {currentModule.progress}%
-                  </div>
-                </div>
-                <p className="text-muted">Duration: {currentModule.duration}</p>
-                <p>{currentModule.content}</p>
-              </div>
-            </div>
-          </div>
+                    <ListItemIcon>
+                      {mod.type === 'video' ? <PlayCircle color={mod.completed ? 'success' : 'action'} /> :
+                       mod.type === 'quiz' ? <Quiz color={mod.completed ? 'success' : 'action'} /> :
+                       <Description color={mod.completed ? 'success' : 'action'} />}
+                    </ListItemIcon>
+                    <ListItemText primary={mod.title} />
+                    {mod.completed && <CheckCircle color="success" fontSize="small" />}
+                  </ListItem>
+                  {idx !== mockModules.length - 1 && <Divider />}
+                </React.Fragment>
+              ))}
+            </List>
+          </Paper>
+          <LinearProgress variant="determinate" value={progress} sx={{ mt: 2 }} />
+          <Typography variant="caption" color="text.secondary">
+            Progress: {Math.round(progress)}%
+          </Typography>
+        </Grid>
 
-          <div className="col-lg-4">
-            <div className="card shadow mb-4">
-              <div className="card-header">
-                <h6 className="card-title mb-0">Course Navigation</h6>
-              </div>
-              <div className="card-body">
-                <div className="list-group list-group-flush">
-                  <a href="#" className="list-group-item list-group-item-action active">
-                    <div className="d-flex w-100 justify-content-between">
-                      <h6 className="mb-1">State and Lifecycle</h6>
-                      <small>Current</small>
-                    </div>
-                    <p className="mb-1">Learn about React state management</p>
-                    <small>45 minutes</small>
-                  </a>
-                  <a href="#" className="list-group-item list-group-item-action">
-                    <div className="d-flex w-100 justify-content-between">
-                      <h6 className="mb-1">Hooks</h6>
-                      <small>Next</small>
-                    </div>
-                    <p className="mb-1">Modern React with hooks</p>
-                    <small>60 minutes</small>
-                  </a>
-                  <a href="#" className="list-group-item list-group-item-action">
-                    <div className="d-flex w-100 justify-content-between">
-                      <h6 className="mb-1">Advanced Patterns</h6>
-                      <small>Locked</small>
-                    </div>
-                    <p className="mb-1">Advanced React patterns</p>
-                    <small>90 minutes</small>
-                  </a>
-                </div>
-              </div>
-            </div>
+        {/* Content Area */}
+        <Grid item xs={12} md={9}>
+          <Card>
+            <CardContent>
+              <Typography variant="h5" gutterBottom>
+                {module.title}
+              </Typography>
+              <Chip label={module.type.toUpperCase()} color="primary" sx={{ mb: 2 }} />
+              {/* Mock content display */}
+              {module.type === 'video' ? (
+                <Box sx={{ mb: 3 }}>
+                  <Box sx={{ width: '100%', height: 320, bgcolor: '#000', borderRadius: 2, mb: 2, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <PlayCircle sx={{ color: '#fff', fontSize: 80 }} />
+                  </Box>
+                  <Typography variant="body2" color="text.secondary">
+                    Video player placeholder
+                  </Typography>
+                </Box>
+              ) : module.type === 'text' ? (
+                <Box sx={{ mb: 3 }}>
+                  <Typography variant="body1">
+                    This is a sample text content for the module. You can add formatted text, images, and more here.
+                  </Typography>
+                </Box>
+              ) : (
+                <Box sx={{ mb: 3 }}>
+                  <Typography variant="body1">
+                    Quiz content goes here. (Mock quiz)
+                  </Typography>
+                </Box>
+              )}
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 4 }}>
+                <Button
+                  variant="outlined"
+                  startIcon={<ArrowBack />}
+                  onClick={handlePrev}
+                  disabled={currentModule === 0}
+                >
+                  Previous
+                </Button>
+                <Button
+                  variant="contained"
+                  endIcon={<ArrowForward />}
+                  onClick={handleNext}
+                  disabled={currentModule === mockModules.length - 1}
+                >
+                  Next
+                </Button>
+              </Box>
+            </CardContent>
+          </Card>
+        </Grid>
+      </Grid>
+    </Box>
+  )
+}
 
-            <div className="card shadow">
-              <div className="card-header">
-                <h6 className="card-title mb-0">Quick Actions</h6>
-              </div>
-              <div className="card-body">
-                <div className="d-grid gap-2">
-                  <button className="btn btn-primary">Take Notes</button>
-                  <button className="btn btn-success">Mark Complete</button>
-                  <button className="btn btn-info">Download Resources</button>
-                  <button className="btn btn-warning">Ask Question</button>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </Layout>
-  );
-};
-
-export default CoursePlayer; 
+export default CoursePlayer 
